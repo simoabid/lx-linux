@@ -1,0 +1,129 @@
+.TH LX 1 "August 2026" "lx 0.1.0" "User Commands"
+.SH NAME
+lx \- power your Linux experience: system info, network, processes, packages, tuning, security, cleanup, services, backups, health
+.SH SYNOPSIS
+.B lx
+[\fIOPTIONS\fR] \fICOMMAND\fR [\fIARGS\fR]...
+.SH DESCRIPTION
+.B lx
+is a modern, feature-rich CLI toolkit that bundles dozens of system
+inspection, network, process, package, tweak, security, cleanup, and
+service utilities behind a single colorful command.
+.PP
+Run
+.B lx --help
+for the command list and
+.B lx COMMAND --help
+for details on a specific command.
+.SH COMMANDS
+.TP
+.B info
+Show system information: OS, kernel, CPU, memory, disk, GPU, network, uptime.
+Flags: \fB--cpu\fR, \fB--mem\fR, \fB--disk\fR, \fB--gpu\fR, \fB--net\fR.
+.TP
+.B net
+Network tools: \fBiface\fR (interfaces), \fBports\fR (listening sockets),
+\fBip\fR (public IP), \fBspeed\fR (download speed test), \fBtrace\fR HOST
+(traceroute), \fBall\fR.
+.TP
+.B proc
+Process manager: \fBtop\fR [-n NUM] [-s cpu|mem|rss|time], \fBfind\fR NAME,
+\fBtree\fR [NAME], \fBkill\fR [-9] PATTERN, \fBme\fR.
+.TP
+.B pkg
+Unified package manager wrapper for apt/dnf/pacman/zypper/apk/flatpak/snap:
+\fBstatus\fR, \fBsearch\fR QUERY, \fBupdate\fR, \fBupgrade\fR, \fBinstall\fR
+NAME, \fBremove\fR NAME, \fBpurge\fR. Backend auto-detected, override with
+\fB-b/--backend\fR.
+.TP
+.B tweak
+System tuning. \fBshow\fR, \fBswappiness\fR N [--no-persist], \fBmax-files\fR N,
+\fBgovernor\fR NAME, \fBbbr\fR, \fBinteractive\fR, \fBset\fR KEY VALUE.
+Most tweak subcommands require root.
+.TP
+.B sec
+Security audit. \fBaudit\fR [--no-suid], \fBssh\fR, \fBports\fR, \fBsuid\fR,
+\fBhardssh\fR (writes hardening drop-in).
+.TP
+.B clean
+Free disk space. \fBcache\fR, \fBlogs\fR [--vacuum MB], \fBkernels\fR
+[--keep N], \fBreport\fR. Destructive subcommands require root and confirm.
+.TP
+.B service
+systemd wrapper: \fBstatus\fR NAME, \fBlist\fR [--state S] [--type T],
+\fBfailed\fR, \fBlog\fR NAME, \fBstart\fR/\fBstop\fR/\fBrestart\fR NAME,
+\fBenable\fR/\fBdisable\fR NAME, \fBtimers\fR.
+.TP
+.B backup
+Dotfile & config backup. \fBcreate\fR [-d DEST] [-t EXTRA], \fBlist\fR,
+\fBrestore\fR ARCHIVE [--dry-run].
+.TP
+.B health
+Compute an overall system health score (0-100) from CPU load, memory,
+disk, swap, temperature, uptime, failed units, and zombies.
+.SH OPTIONS
+.TP
+.B \-\-version
+Print version and exit.
+.TP
+.B \-h, \-\-help
+Show help and exit.
+.SH EXAMPLES
+.TP
+Snapshot the system:
+.B lx info
+.TP
+Show listening ports:
+.B lx net ports -a
+.TP
+Top 20 processes by memory:
+.B lx proc top -n 20 -s mem
+.TP
+Upgrade all packages (auto-detects apt on Debian/Ubuntu):
+.B lx pkg upgrade -y
+.TP
+Apply desktop-friendly tuning (requires root):
+.B sudo lx tweak interactive
+.TP
+Full security audit:
+.B lx sec audit
+.TP
+Free up old kernels, keeping the newest 2 (requires root):
+.B sudo lx clean kernels --keep 2 -y
+.TP
+Back up dotfiles:
+.B lx backup create
+.SH FILES
+.TP
+.I /etc/sysctl.d/90-lx.conf
+Persistent sysctl settings written by
+.B lx tweak
+commands (when \fB--persist\fR, the default).
+.TP
+.I /etc/security/limits.conf
+Updated by
+.B lx tweak max-files
+.TP
+.I /etc/ssh/sshd_config.d/99-lx-hardening.conf
+Hardening drop-in written by
+.B lx sec hardssh
+.TP
+.I ~/lx-backups/
+Default destination for
+.B lx backup create
+.SH EXIT STATUS
+Returns 0 on success, 1 on runtime errors, 2 on CLI usage errors, 130 on
+interrupt, and 124 if a subprocess times out.
+.SH BUGS
+Report issues via your distribution's bug tracker or the project's issue
+tracker. Include the output of \fBlx --version\fR and the failing command.
+.SH SEE ALSO
+.BR sysctl (8),
+.BR systemctl (1),
+.BR ps (1),
+.BR ss (8),
+.BR sshd_config (5),
+.BR journalctl (1),
+.BR tar (1)
+.SH AUTHOR
+The lx maintainers.
