@@ -18,7 +18,7 @@ how to help without friction.
 ## Development setup
 
 ```bash
-git clone https://github.com/OWNER/lx.git
+git clone https://github.com/simoabid/lx-linux.git
 cd lx
 python -m venv .venv && source .venv/bin/activate
 pip install -e '.[dev]'

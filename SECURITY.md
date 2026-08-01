@@ -15,8 +15,7 @@ changes when run as root, so we take security seriously.
 **Do not open a public issue for security vulnerabilities.** Please report
 them privately:
 
-- Open a [private advisory] on GitHub (preferred), or
-- Email the maintainers (address TBD).
+- Open a [private advisory](https://github.com/simoabid/lx-linux/security/advisories/new) on GitHub (preferred).
 
 Please include:
 

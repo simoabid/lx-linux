@@ -9,7 +9,7 @@ command.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](pyproject.toml)
-[![CI](https://github.com/OWNER/lx/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/lx/actions/workflows/ci.yml)
+[![CI](https://github.com/simoabid/lx-linux/actions/workflows/ci.yml/badge.svg)](https://github.com/simoabid/lx-linux/actions/workflows/ci.yml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 ```
@@ -92,7 +92,7 @@ Optional system tools, auto-detected at runtime:
 ### Recommended: pipx
 
 ```bash
-git clone https://github.com/OWNER/lx.git
+git clone https://github.com/simoabid/lx-linux.git
 cd lx
 pipx install .
 ```
@@ -100,7 +100,7 @@ pipx install .
 ### pip (user install)
 
 ```bash
-git clone https://github.com/OWNER/lx.git
+git clone https://github.com/simoabid/lx-linux.git
 cd lx
 pip install --user .
 ```
@@ -108,7 +108,7 @@ pip install --user .
 ### Install script (installs binary + man page)
 
 ```bash
-git clone https://github.com/OWNER/lx.git
+git clone https://github.com/simoabid/lx-linux.git
 cd lx
 ./install.sh
 ```
@@ -120,7 +120,7 @@ installs the man page into `~/.local/share/man/man1`. Make sure
 ### Development install
 
 ```bash
-git clone https://github.com/OWNER/lx.git
+git clone https://github.com/simoabid/lx-linux.git
 cd lx
 python -m venv .venv && source .venv/bin/activate
 pip install -e '.[dev]'

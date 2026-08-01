@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/OWNER/lx"
-Repository = "https://github.com/OWNER/lx"
-Issues = "https://github.com/OWNER/lx/issues"
-Changelog = "https://github.com/OWNER/lx/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/simoabid/lx-linux"
+Repository = "https://github.com/simoabid/lx-linux"
+Issues = "https://github.com/simoabid/lx-linux/issues"
+Changelog = "https://github.com/simoabid/lx-linux/blob/main/CHANGELOG.md"
 
 [project.scripts]
 lx = "lx.__main__:main"
