@@ -5,7 +5,7 @@ import click
 from rich.table import Table
 
 from lx.utils.output import err, ok
-from lx.utils.shell import run
+from lx.utils.shell import is_root, run
 
 
 def _check_systemctl(console) -> bool:
@@ -104,8 +104,11 @@ def _svc_log(ctx: click.Context, name: str, lines: int) -> None:
 
 
 def _svc_action(action: str, console, name: str) -> None:
-    """Run a systemctl action; exits 1 on failure."""
-    res = run(["systemctl", action, name], sudo=True, timeout=30)
+    """Run a systemctl action; requires root, exits 1 on failure."""
+    if not is_root():
+        err(console, f"'{action}' requires root. Retry with: sudo lx service {action} {name}")
+        raise click.exceptions.Exit(1)
+    res = run(["systemctl", action, name], timeout=30)
     if res.ok:
         ok(console, f"{action} {name}")
     else:

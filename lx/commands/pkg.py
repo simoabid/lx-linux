@@ -7,9 +7,16 @@ import click
 from rich.table import Table
 
 from lx.utils.output import center_rule, err, ok
-from lx.utils.shell import run
+from lx.utils.shell import is_root, run
 
 BACKENDS = ("apt", "dnf", "pacman", "zypper", "apk", "flatpak", "snap")
+
+
+def _require_root(console) -> bool:
+    if is_root():
+        return True
+    err(console, "subcommand requires root. Retry with: sudo lx pkg ...")
+    return False
 
 
 def _detect_backend() -> tuple[str | None, list[str]]:
@@ -176,6 +183,8 @@ def _pkg_update(ctx: click.Context) -> None:
     if not be:
         err(console, "no package manager detected")
         raise click.exceptions.Exit(1)
+    if not _require_root(console):
+        raise click.exceptions.Exit(1)
     res = run(["sh", "-c", _commands(be)["update"]], sudo=_require_admin(be, "update"), timeout=120)
     if res.ok:
         ok(console, "index refreshed")
@@ -193,6 +202,8 @@ def _pkg_upgrade(ctx: click.Context, yes: bool) -> None:
     be = ctx.obj.data["backend"]
     if not be:
         err(console, "no package manager detected")
+        raise click.exceptions.Exit(1)
+    if not _require_root(console):
         raise click.exceptions.Exit(1)
     if not yes and not click.confirm(f"Upgrade all packages with {be}?", default=False):
         raise click.exceptions.Abort()
@@ -214,6 +225,8 @@ def _pkg_install(ctx: click.Context, name: str) -> None:
     if not be:
         err(console, "no package manager detected")
         raise click.exceptions.Exit(1)
+    if not _require_root(console):
+        raise click.exceptions.Exit(1)
     pkgs = " ".join(p.strip() for p in name.split(",")) if "," in name else name
     cmd = f"{_commands(be)['install']} {pkgs}"
     res = run(["sh", "-c", cmd], sudo=_require_admin(be, "install"), timeout=300)
@@ -234,6 +247,8 @@ def _pkg_remove(ctx: click.Context, name: str) -> None:
     if not be:
         err(console, "no package manager detected")
         raise click.exceptions.Exit(1)
+    if not _require_root(console):
+        raise click.exceptions.Exit(1)
     cmd = f"{_commands(be)['remove']} {name}"
     res = run(["sh", "-c", cmd], sudo=_require_admin(be, "remove"), timeout=300)
     if res.ok:
@@ -251,6 +266,8 @@ def _pkg_purge(ctx: click.Context) -> None:
     be = ctx.obj.data["backend"]
     if not be:
         err(console, "no package manager detected")
+        raise click.exceptions.Exit(1)
+    if not _require_root(console):
         raise click.exceptions.Exit(1)
     res = run(["sh", "-c", _commands(be)["clean"]], sudo=_require_admin(be, "clean"), timeout=120)
     if res.ok:
