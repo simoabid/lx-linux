@@ -289,7 +289,20 @@ def test_sec_audit_md_format():
     assert "0.0.0.0:22" in out
 
 
-def test_sec_audit_md_flag_wired():
+def test_sec_audit_md_flag_wired(monkeypatch):
+    fake = {
+        "findings": [("SSH", "high", "PermitRootLogin is yes")],
+        "summary": {"high": 1},
+        "sections": {
+            "ssh": {"config_present": True, "config": {"Port": "22"}},
+            "ports": {
+                "listening": [{"proto": "tcp", "local": "0.0.0.0:22", "pid": 1, "process": "sshd"}]
+            },
+            "sudoers": {"users": ["seemoo"]},
+            "suid": {"hits": [], "count": 0},
+        },
+    }
+    monkeypatch.setattr(sec, "_collect_audit", lambda no_suid=False: fake)
     r = _invoke(["sec", "audit", "--format", "md"])
     assert r.exit_code == 0
     assert "# lx security audit" in r.output
@@ -299,6 +312,53 @@ def test_sec_audit_format_rejects_invalid():
     r = _invoke(["sec", "audit", "--format", "html"])
     assert r.exit_code == 2
     assert "Invalid value" in r.output
+
+
+def test_sec_collect_ssh_unreadable_dropin_does_not_crash(tmp_path):
+    (tmp_path / "sshd_config").write_text("PermitRootLogin yes\n")
+    dropins = tmp_path / "sshd_config.d"
+    dropins.mkdir()
+    locked = dropins / "50-locked.conf"
+    locked.write_text("PasswordAuthentication yes\n")
+    locked.chmod(0)
+    try:
+        data = sec._collect_ssh(ssh_dir=tmp_path)
+    finally:
+        locked.chmod(0o644)
+    assert data["config_present"] is True
+    assert data["config"]["PermitRootLogin"] == "yes"
+    assert data["config"]["PasswordAuthentication"] == ""
+
+
+def test_sec_collect_ssh_missing_dir_is_graceful(tmp_path):
+    data = sec._collect_ssh(ssh_dir=tmp_path / "does-not-exist")
+    assert data["config_present"] is False
+    assert data["findings"]
+
+
+def test_sec_collect_suid_unreadable_dir_does_not_crash(tmp_path):
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    (locked / "suid-probe").write_text("x")
+    locked.chmod(0)
+    try:
+        data = sec._collect_suid(roots=[tmp_path])
+    finally:
+        locked.chmod(0o755)
+    assert isinstance(data["count"], int)
+    assert data["hits"] == []
+
+
+def test_sec_collect_sshkeys_unreadable_host_key_does_not_crash(tmp_path):
+    pub = tmp_path / "ssh_host_rsa_key.pub"
+    pub.write_text("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ fake root@host\n")
+    pub.chmod(0)
+    try:
+        data = sec._collect_sshkeys(passwd_text="", ssh_dir=tmp_path)
+    finally:
+        pub.chmod(0o644)
+    assert data["host_keys"] == []
+    assert data["users"] == []
 
 
 # ---------------------------------------------------------------- clean

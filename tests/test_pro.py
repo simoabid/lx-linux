@@ -91,6 +91,31 @@ def test_watch_rejected_for_unknown_command(monkeypatch):
     assert m.main() == 2
 
 
+@pytest.mark.parametrize(
+    "argv,expected",
+    [
+        (["--watch", "1", "health"], ("health", [])),
+        (["--watch=1", "health"], ("health", [])),
+        (["--watch", "1", "pkg", "status"], ("status", [])),
+        (["--watch", "1", "pkg", "install", "curl"], ("install", ["curl"])),
+        (["--watch", "1", "no-such-command"], ("", ["no-such-command"])),
+        (["--watch", "1"], ("", [])),
+        (["-q", "--watch", "1", "net", "ports"], ("ports", [])),
+        (["--json", "info"], ("info", [])),
+        (["--watch", "1", "sec", "ports"], ("ports", [])),
+    ],
+)
+def test_resolve_leaf_from_argv(argv, expected):
+    leaf, leftover = m._resolve_leaf_from_argv(argv)
+    assert (leaf.name if leaf else "", leftover) == expected
+
+
+def test_command_tokens_drops_watch_value():
+    assert m._command_tokens(["--watch", "1", "pkg", "install"]) == ["pkg", "install"]
+    assert m._command_tokens(["--watch=1", "health"]) == ["health"]
+    assert m._command_tokens([]) == []
+
+
 def test_watch_loop_emits_ndjson(monkeypatch, capsys):
     monkeypatch.setenv("LX_WATCH_MAX_ITERS", "2")
     monkeypatch.setattr(sys, "argv", ["lx", "--watch", "0.05", "health", "--json"])

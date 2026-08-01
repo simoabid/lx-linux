@@ -29,16 +29,23 @@ def _severity_score(severity: str) -> int:
 # ---------------------------------------------------------------- SSH
 
 
-def _collect_ssh() -> dict:
+def _collect_ssh(ssh_dir: Path | None = None) -> dict:
     findings: list[tuple[str, str, str]] = []
-    cfg_path = Path("/etc/ssh/sshd_config")
-    cfg_dropins = Path("/etc/ssh/sshd_config.d")
+    ssh_dir = ssh_dir or Path("/etc/ssh")
+    cfg_path = ssh_dir / "sshd_config"
+    cfg_dropins = ssh_dir / "sshd_config.d"
     content = ""
-    if cfg_path.exists():
-        content += cfg_path.read_text()
-    if cfg_dropins.exists():
+    if cfg_path.is_file():
+        try:
+            content += cfg_path.read_text(errors="ignore")
+        except OSError:
+            pass
+    if cfg_dropins.is_dir():
         for p in cfg_dropins.glob("*.conf"):
-            content += "\n" + p.read_text()
+            try:
+                content += "\n" + p.read_text(errors="ignore")
+            except OSError:
+                pass
 
     def get_value(key: str) -> str:
         for line in content.splitlines():
@@ -146,7 +153,10 @@ def _render_ports(console, data: dict) -> None:
 def _collect_sudoers() -> dict:
     findings: list[tuple[str, str, str]] = []
     users: list[str] = []
-    groups = Path("/etc/group").read_text() if Path("/etc/group").exists() else ""
+    try:
+        groups = Path("/etc/group").read_text() if Path("/etc/group").exists() else ""
+    except OSError:
+        groups = ""
     for line in groups.splitlines():
         parts = line.split(":")
         if len(parts) >= 4 and parts[0] in ("sudo", "wheel"):
@@ -170,20 +180,24 @@ def _render_sudoers(console, data: dict) -> None:
 # ---------------------------------------------------------------- SUID
 
 
-def _collect_suid() -> dict:
+def _collect_suid(roots: list[Path] | None = None) -> dict:
     findings: list[tuple[str, str, str]] = []
     hits: list[tuple[str, str]] = []
-    roots = [Path(r) for r in ("/usr", "/bin", "/sbin", "/opt") if Path(r).exists()]
+    roots = roots or [Path(r) for r in ("/usr", "/bin", "/sbin", "/opt") if Path(r).is_dir()]
     for root in roots:
-        for path in root.rglob("*"):
-            try:
-                st = path.stat()
-            except OSError:
-                continue
-            if stat.S_ISREG(st.st_mode) and (
-                st.st_mode & stat.S_ISUID or st.st_mode & stat.S_ISGID
-            ):
-                hits.append((str(path), "suid" if st.st_mode & stat.S_ISUID else "sgid"))
+        try:
+            iterator = root.rglob("*")
+            for path in iterator:
+                try:
+                    st = path.stat()
+                except OSError:
+                    continue
+                if stat.S_ISREG(st.st_mode) and (
+                    st.st_mode & stat.S_ISUID or st.st_mode & stat.S_ISGID
+                ):
+                    hits.append((str(path), "suid" if st.st_mode & stat.S_ISUID else "sgid"))
+        except OSError:
+            continue
     weird = [p for p, _ in hits if p.startswith("/usr/local")]
     hits.sort(key=lambda x: x[0])
     if weird:
@@ -679,9 +693,13 @@ def _render_worldwritable(console, data: dict) -> None:
 # ---------------------------------------------------------------- SSH keys
 
 
-def _collect_sshkeys(passwd_text: str | None = None) -> dict:
+def _collect_sshkeys(passwd_text: str | None = None, ssh_dir: Path | None = None) -> dict:
+    ssh_dir = ssh_dir or Path("/etc/ssh")
     if passwd_text is None:
-        passwd_text = Path("/etc/passwd").read_text() if Path("/etc/passwd").exists() else ""
+        try:
+            passwd_text = Path("/etc/passwd").read_text() if Path("/etc/passwd").exists() else ""
+        except OSError:
+            passwd_text = ""
     users = []
     for u in parse_passwd(passwd_text):
         if not u["is_login_shell"] or u["uid"] < 1000:
@@ -706,9 +724,12 @@ def _collect_sshkeys(passwd_text: str | None = None) -> dict:
                 pass
         users.append(entry)
     host_keys = []
-    for p in Path("/etc/ssh").glob("*_key.pub") if Path("/etc/ssh").exists() else []:
-        for k in parse_authorized_keys(p.read_text(errors="ignore")):
-            host_keys.append({"type": k["type"], "comment": k["comment"]})
+    for p in ssh_dir.glob("*_key.pub") if ssh_dir.is_dir() else []:
+        try:
+            for k in parse_authorized_keys(p.read_text(errors="ignore")):
+                host_keys.append({"type": k["type"], "comment": k["comment"]})
+        except OSError:
+            continue
     return {"users": users, "host_keys": host_keys}
 
 

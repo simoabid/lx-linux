@@ -234,18 +234,43 @@ def _cmd_completion(shell: str) -> None:
         os.environ.pop("_LX_COMPLETE", None)
 
 
-def _resolve_leaf_command(ctx: click.Context) -> click.Command | None:
-    """Resolve the leaf command from the not-yet-invoked token chain.
+def _command_tokens(argv: list[str]) -> list[str]:
+    """Positional tokens from raw argv, dropping the global flags.
 
-    click 8.4 does not resolve subcommands during parsing (invoked_subcommand
-    is only set inside invoke()), so we walk the leftover tokens.
+    Click's leftover-arg bookkeeping (``ctx.args`` / ``ctx._protected_args``)
+    differs between 8.1 and 8.2+, so the --watch gate resolves the leaf
+    command from the raw argv instead of parse internals.
     """
-    cmd: click.Command | None = ctx.command
-    tokens: list[str] = list(getattr(ctx, "_protected_args", ())) + list(ctx.args)
+    tokens: list[str] = []
+    skip_next = False
+    for tok in argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if tok == "--watch":
+            skip_next = True
+            continue
+        if tok.startswith("-"):
+            continue
+        tokens.append(tok)
+    return tokens
+
+
+def _resolve_leaf_from_argv(argv: list[str]) -> tuple[click.Command | None, list[str]]:
+    """Deepest command matched by argv, plus the leftover tokens.
+
+    Returns ``None`` when nothing resolved (no command given, or the first
+    positional token is not a known command). Leftover tokens mean the
+    resolved command was followed by positional arguments.
+    """
+    cmd: click.Command | None = cli
+    tokens = _command_tokens(argv)
     while isinstance(cmd, click.Group) and tokens and tokens[0] in cmd.commands:
         cmd = cmd.commands[tokens[0]]
         tokens = tokens[1:]
-    return cmd
+    if cmd is cli:
+        return None, tokens
+    return cmd, tokens
 
 
 def _max_watch_iters() -> int:
@@ -287,11 +312,9 @@ def main() -> int:
             ctx.params.get("quiet") or False,
         )
 
-        if ctx.obj.watch and (
-            ctx.invoked_subcommand is not None or getattr(ctx, "_protected_args", ())
-        ):
-            leaf = _resolve_leaf_command(ctx)
-            if leaf is None or not is_watch_capable(leaf):
+        if ctx.obj.watch and _command_tokens(argv):
+            leaf, leftover = _resolve_leaf_from_argv(argv)
+            if leftover or leaf is None or not is_watch_capable(leaf):
                 _console.print(f"[bold red]error:[/bold red] {_WATCH_HELP}")
                 return 2
 
