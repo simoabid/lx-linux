@@ -1,4 +1,5 @@
 """Tests for the lx CLI dispatch and version/help output."""
+
 from __future__ import annotations
 
 from click.testing import CliRunner
@@ -18,7 +19,24 @@ def test_help_lists_commands() -> None:
     r = CliRunner()
     result = r.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    for cmd in ("info", "net", "proc", "pkg", "tweak", "sec", "clean", "service", "backup", "health"):
+    for cmd in (
+        "info",
+        "net",
+        "proc",
+        "pkg",
+        "tweak",
+        "sec",
+        "clean",
+        "service",
+        "backup",
+        "health",
+        "fs",
+        "sys",
+        "bench",
+        "log",
+        "cron",
+        "power",
+    ):
         assert cmd in result.output
 
 
@@ -31,7 +49,24 @@ def test_no_subcommand_prints_banner() -> None:
 
 def test_each_command_has_help() -> None:
     r = CliRunner()
-    for cmd in ("info", "net", "proc", "pkg", "tweak", "sec", "clean", "service", "backup", "health"):
+    for cmd in (
+        "info",
+        "net",
+        "proc",
+        "pkg",
+        "tweak",
+        "sec",
+        "clean",
+        "service",
+        "backup",
+        "health",
+        "fs",
+        "sys",
+        "bench",
+        "log",
+        "cron",
+        "power",
+    ):
         result = r.invoke(cli, [cmd, "--help"])
         assert result.exit_code == 0, f"{cmd} --help failed: {result.output}"
         assert "Usage" in result.output or "usage" in result.output.lower()
@@ -51,6 +86,29 @@ def test_subcommands_resolve() -> None:
         ("clean", "report"),
         ("service", "failed"),
         ("backup", "list"),
+        ("fs", "usage"),
+        ("fs", "large"),
+        ("fs", "inodes"),
+        ("fs", "mounts"),
+        ("sys", "usb"),
+        ("sys", "pci"),
+        ("sys", "modules"),
+        ("sys", "env"),
+        ("sys", "time"),
+        ("sys", "boot"),
+        ("sys", "all"),
+        ("bench", "cpu"),
+        ("bench", "memory"),
+        ("bench", "disk"),
+        ("bench", "all"),
+        ("log", "show"),
+        ("log", "errors"),
+        ("log", "follow"),
+        ("cron", "list"),
+        ("cron", "timers"),
+        ("power", "battery"),
+        ("power", "profiles"),
+        ("power", "all"),
     ]
     for group, sub in cases:
         result = r.invoke(cli, [group, sub, "--help"])

@@ -1,4 +1,5 @@
 """Tests for command module internals (logic, not live system calls)."""
+
 from __future__ import annotations
 
 from lx.commands import backup, clean, pkg, sec, tweak

@@ -1,4 +1,5 @@
 """Shell runner helpers — safely run commands and capture output."""
+
 from __future__ import annotations
 
 import shlex
@@ -62,7 +63,9 @@ def run(
 
     result = Result.from_completed(cp)
     if check and not result.ok:
-        raise RuntimeError(f"command failed ({result.returncode}): {result.stderr or result.stdout}")
+        raise RuntimeError(
+            f"command failed ({result.returncode}): {result.stderr or result.stdout}"
+        )
     return result
 
 

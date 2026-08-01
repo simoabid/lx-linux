@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lx"
-version = "0.1.0"
+version = "0.4.0"
 description = "lx — a modern, feature-rich CLI toolkit to power your Linux experience"
 readme = "README.md"
 requires-python = ">=3.9"
